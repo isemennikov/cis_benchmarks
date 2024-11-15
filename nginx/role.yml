@@ -1,0 +1,28 @@
+---
+- name: Ensure HSTS header is set in Nginx configuration
+  lineinfile:
+    path: /etc/nginx/nginx.conf  # Adjust this path as necessary
+    line: 'add_header Strict-Transport-Security "max-age=15768000;"'
+    state: present
+    validate: 'nginx -t'
+  notify: Restart Nginx
+
+- name: Check if HSTS header is present
+  command: grep -ir Strict-Transport-Security /etc/nginx
+  register: hsts_check
+  ignore_errors: true
+
+- name: Add HSTS header if not present
+  lineinfile:
+    path: /etc/nginx/nginx.conf
+    line: 'add_header Strict-Transport-Security "max-age=15768000;"'
+    state: present
+    when: hsts_check.rc != 0
+    validate: 'nginx -t'
+  notify: Restart Nginx
+
+handlers:
+  - name: Restart Nginx
+    service:
+      name: nginx
+      state: restarted
